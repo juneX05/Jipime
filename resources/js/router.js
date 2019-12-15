@@ -1,6 +1,7 @@
 import VueRouter from 'vue-router'
 //import your routes here
 import users_routes from "../../modules/User/Vue/routes";
+import courses_routes from "../../modules/Course/Vue/routes";
 
 const startRoutes = [
     //add routes to be placed at the beginning
@@ -15,7 +16,7 @@ const endRoutes = [
 let moduleRoutes = [];
 moduleRoutes = moduleRoutes.concat(
     //add your module routes in here
-    users_routes,
+    users_routes,courses_routes,
 );
 
 const routes = startRoutes.concat(
