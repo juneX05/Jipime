@@ -4,9 +4,9 @@ namespace Modules\Course\Models;
 
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Course\Models\Test;
+use Modules\Course\Models\Course;
 
-class Course extends Model
+class MatchingItem extends Model
 {
 
     /**
@@ -15,7 +15,7 @@ class Course extends Model
      * @var array
      */
     protected $fillable = [
-        'name', 'description', 'image'
+        'partA', 'partB', 'question_id'
     ];
 
     /**
@@ -36,7 +36,7 @@ class Course extends Model
         //'email_verified_at' => 'datetime',
     ];
 
-    public function tests(){
-        return $this->hasMany(Test::class);
+    public function question(){
+        return $this->belongsTo(Question::class);
     }
 }

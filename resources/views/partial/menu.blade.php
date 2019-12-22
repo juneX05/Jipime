@@ -34,6 +34,12 @@
                     <p>Courses </p>
                 </router-link>
             </li>
+            <li class="nav-item">
+                <router-link to="/tests" class="nav-link">
+                    <i class="fas fa-question nav-icon"></i>
+                    <p>Tests </p>
+                </router-link>
+            </li>
         </ul>
     </li>
 @endcan

@@ -16,11 +16,11 @@ class CourseController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\Illuminate\Http\Response
      */
     public function index()
     {
-        return Course::latest()->paginate(20);
+        return Course::with('tests')->paginate(20);
     }
 
     /**
@@ -68,11 +68,11 @@ class CourseController extends Controller
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Builder[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Database\Eloquent\Model|\Illuminate\Http\Response
      */
     public function show($id)
     {
-        return Course::findOrFail($id);
+        return Course::with('tests')->findOrFail($id);
     }
 
     /**
@@ -85,7 +85,7 @@ class CourseController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $course = Course::findOrFail($id);
+        $course = Course::with('tests')->findOrFail($id);
         $this->validate($request,[
             'name'=> 'required|string|max:191|unique:courses,name,'.$course->id,
             'description'=> 'required|string|max:191',
@@ -126,7 +126,7 @@ class CourseController extends Controller
     public function destroy($id)
     {
         $this->authorize('isAdmin');
-        $course = Course::findOrFail($id);
+        $course = Course::with('tests')->findOrFail($id);
         $course->delete();
         //delete the user
         $coursePhoto = public_path('img/course/').$course->image;
@@ -145,7 +145,7 @@ class CourseController extends Controller
         }
         else
         {
-            $courses = Course::latest()->paginate(20);
+            $courses = Course::with('tests')->paginate(20);
         }
 
         return $courses;

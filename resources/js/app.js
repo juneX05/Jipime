@@ -109,10 +109,17 @@ const app = new Vue({
         },1000),
         userUpdate(){
             if (window.user && window.user.photo !== ''){
-                this.userimage = './img/profile/'+window.user.photo;
+                this.userimage = '/img/profile/'+window.user.photo;
                 this.username = window.user.name;
                 this.usertype = window.user.type;
             }
+        },
+        shuffler(items){
+            return items
+                .map((a) => ({sort: Math.random(), value: a}))
+                .sort((a, b) => a.sort - b.sort)
+                .map((a) => a.value)
+
         }
     },
     created(){

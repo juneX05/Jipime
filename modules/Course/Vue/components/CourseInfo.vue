@@ -1,14 +1,25 @@
 <template>
     <div class="container">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0 text-dark">{{coursename}} Course</h1>
+                        <small>{{description}}</small>
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+
         <div class="row">
             <div class="col-md-12" >
 
                 <div v-if="$gate.isAdmin()" class="card">
                     <div class="card-header">
-                        <h3 class="card-title">All Courses</h3>
+                        <h3 class="card-title">All Tests in Course {{coursename}}</h3>
 
                         <div class="card-tools">
-                            <button class="btn btn-primary" @click="newModal">Add New <i class="fas fa-book-open"></i></button>
+                            <button class="btn btn-primary" @click="newModal">Add Test <i class="fas fa-book-open"></i></button>
                         </div>
                     </div>
                     <!-- /.card-header -->
@@ -18,29 +29,31 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Name</th>
+                                <th>Course</th>
                                 <th>Description</th>
-                                <th>Image</th>
+                                <th>Duration</th>
                                 <th>Added At</th>
                                 <th>Modify</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr v-for="course in courses.data" :key="course.id">
-                                <td>{{course.id}}</td>
-                                <td>{{course.name}}</td>
-                                <td>{{course.description}}</td>
-                                <td><img :src=" './img/course/'+course.image" width="100px" height="100px" /></td>
-                                <td>{{course.created_at | myDate}}</td>
+                            <tr v-for="test in tests.data" :key="test.id">
+                                <td>{{test.id}}</td>
+                                <td>{{test.name}}</td>
+                                <td>{{test.course.name}}</td>
+                                <td>{{test.description}}</td>
+                                <td>{{test.duration}}</td>
+                                <td>{{test.created_at | myDate}}</td>
                                 <td>
-                                    <a href="#" @click="editModal(course)">
+                                    <a href="#" @click="editModal(test)">
                                         <i class="fa fa-edit orange"></i>
                                     </a>
                                     /
-                                    <a href="#" @click="deleteCourse(course.id)">
+                                    <a href="#" @click="deleteTest(test.id)">
                                         <i class="fa fa-trash red"></i>
                                     </a>
                                     /
-                                    <router-link :to="{ name: 'view_course', params: { id: course.id }}">
+                                    <router-link :to="{ name: 'view_test', params: { id: test.id }}">
                                         <i class="fa fa-eye blue"></i>
                                     </router-link>
                                 </td>
@@ -51,7 +64,7 @@
                     </div>
                     <!-- /.card-body -->
                     <div class="card-footer">
-                        <pagination :data="courses" @pagination-change-page="getResults"></pagination>
+                        <pagination :data="tests" @pagination-change-page="getTestResults"></pagination>
                     </div>
                 </div>
                 <div v-if="!($gate.isAdmin())">
@@ -67,35 +80,35 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 v-show="!editMode" class="modal-title">Add New</h5>
-                        <h5 v-show="editMode" class="modal-title">Update Course's Info</h5>
+                        <h5 v-show="editMode" class="modal-title">Update Test's Info</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form @submit.prevent="editMode ? updateCourse() : createCourse()">
+                    <form @submit.prevent="editMode ? updateTest() : createTest()">
                         <div class="modal-body">
                             <!--input edit form -->
 
+                            <!--<input type="hidden" :value="$route.params.id" name="course_id"/>-->
                             <div class="form-group">
                                 <input v-model="form.name" type="text" name="name"
-                                       placeholder="Full Course Name"
+                                       placeholder="Full Test Name"
                                        class="form-control" :class="{ 'is-invalid': form.errors.has('name') }">
                                 <has-error :form="form" field="name"></has-error>
                             </div>
 
                             <div class="form-group">
                                 <textarea v-model="form.description" name="description"
-                                       placeholder="Course Description"
+                                          placeholder="Test Description"
                                           class="form-control" :class="{ 'is-invalid': form.errors.has('description') }"></textarea>
                                 <has-error :form="form" field="description"></has-error>
                             </div>
 
-                            <div class="form-group col-md-6">
-                                <label>Course Image</label>
-                                <input  type="file" name="image"
-                                        @change="updateCoursePhoto"
-                                        class="form-control" :class="{ 'is-invalid': form.errors.has('image') }">
-                                <has-error :form="form" field="image"></has-error>
+                            <div class="form-group">
+                                <input v-model="form.duration" type="text" name="duration"
+                                       placeholder="Test Duration"
+                                       class="form-control" :class="{ 'is-invalid': form.errors.has('duration') }">
+                                <has-error :form="form" field="duration"></has-error>
                             </div>
 
                         </div>
@@ -108,7 +121,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 </template>
 
@@ -117,53 +129,38 @@
         data(){
             return {
                 editMode:true,
-                courses: {},
+                coursename: '',
+                description: '',
+                image: '',
+                tests:{},
                 form : new Form({
+                    course_id: this.$route.params.id,
                     id:'',
                     name: '',
                     description: '',
-                    image:''
+                    duration:'',
                 })
              }
         },
         methods: {
-            updateCoursePhoto(e){
-                let file = e.target.files[0];
-                let reader = new FileReader();
-
-                if (file['size'] < 2111775){
-                    reader.onloadend = (file) => {
-                        this.form.image = reader.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-                else{
-                    swal.fire({
-                        type: 'error',
-                        title: 'Oops...',
-                        text:'You are uploading a file greater than 2 mb'
-                    })
-                }
-
-            },
-            getResults(page=1){
-                axios.get('api/courses?page='+page)
+            getTestResults(page=1){
+                axios.get('/api/tests?page='+page)
                     .then(response => {
-                        this.courses = response.data;
+                        this.tests = response.data;
                     })
             },
-            createCourse(){
+            createTest(){
                 this.$Progress.start();
-                this.form.post('api/courses')
+                this.form.post('/api/tests')
                     .then(() => {
                         //fire an event
-                        Fire.$emit('CourseCreated');
+                        Fire.$emit('TestCreated');
 
                         $('#addNew').modal('hide');
 
                         toast.fire({
                             icon: 'success',
-                            title: 'Course created successfully'
+                            title: 'Test created successfully'
                         });
 
                         this.$Progress.finish();
@@ -172,18 +169,18 @@
                         this.$Progress.fail();
                     });
             },
-            updateCourse(){
+            updateTest(){
                 this.$Progress.start();
-                this.form.put('api/courses/'+this.form.id)
+                this.form.put('/api/tests/'+this.form.id)
                     .then(() => {
                         //fire an event
-                        Fire.$emit('CourseUpdated');
+                        Fire.$emit('TestUpdated');
 
                         $('#addNew').modal('hide');
 
                         toast.fire({
                             icon: 'success',
-                            title: 'Course updated successfully'
+                            title: 'Test updated successfully'
                         });
 
                         this.$Progress.finish();
@@ -192,14 +189,17 @@
                         this.$Progress.fail();
                     });
             },
-            loadCourses(){
+            loadTests(){
                 if (this.$gate.isAdmin() || this.$gate.isAuthor()){
-                    axios.get("api/courses")
-                        .then(({ data }) => {this.courses = data})
+                    axios.get("/api/tests/course/"+this.$route.params.id)
+                        .then(({ data }) => {
+                            this.tests = data;
+                        });
+
                 }
 
             },
-            deleteCourse(id){
+            deleteTest(id){
                 swal.fire({
                     title: 'Are you sure?',
                     text: "You won't be able to revert this!",
@@ -211,14 +211,14 @@
                 }).then((result) => {
                     if (result.value)
                     {
-                        this.form.delete('api/courses/'+id)
+                        this.form.delete('/api/tests/'+id)
                             .then(() => {
                                 swal.fire(
                                     'Deleted!',
-                                    'Course has been deleted.',
+                                    'Test has been deleted.',
                                     'success'
                                 );
-                                Fire.$emit('CourseDeleted');
+                                Fire.$emit('TestDeleted');
                             })
                             .catch(() => {
                                 swal.fire("Failed","There was something wrong.","warning");
@@ -228,38 +228,48 @@
                 });
 
             },
-            editModal(course){
+            editModal(test){
                 this.editMode = true;
                 this.form.reset();
                 $('#addNew').modal('show');
-                this.form.fill(course);
+                this.form.fill(test);
             },
             newModal(){
                 this.editMode = false;
                 this.form.reset();
                 $('#addNew').modal('show')
+            },
+            loadCourseInfo(){
+                axios.get("/api/courses/"+this.$route.params.id)
+                    .then(({ data }) => {
+                        let course = data;
+                        this.coursename = course.name;
+                        this.description = course.description;
+                        this.duration = course.duration;
+                    })
             }
         },
         created() {
-            this.loadCourses();
-            Fire.$on('CourseCreated', () => {
-                this.loadCourses();
+            this.loadCourseInfo();
+            this.loadTests();
+            Fire.$on('TestCreated', () => {
+                this.loadTests();
             });
-            Fire.$on('CourseDeleted', () => {
-                this.loadCourses();
+            Fire.$on('TestDeleted', () => {
+                this.loadTests();
             });
-            Fire.$on('CourseUpdated', () => {
-                this.loadCourses();
+            Fire.$on('TestUpdated', () => {
+                this.loadTests();
             });
             Fire.$on('Searching', () => {
                 let query = this.$parent.search;
-                axios.get("api/findCourse?q="+query)
-                    .then(({ data }) => {this.courses = data})
+                axios.get("/api/findTest?q="+query)
+                    .then(({ data }) => {this.tests = data})
                     .catch(() => {
 
                     })
             });
-            // setInterval(() => this.loadCourses(),3000);
+            // setInterval(() => this.loadTests(),3000);
         }
     }
 </script>
