@@ -173,7 +173,7 @@ class QuestionController extends Controller
         $question = Question::findOrFail($id);
         $question->delete();
 
-        return ['message' => "User Deleted"];
+        return ['message' => "Question Deleted"];
     }
 
     public function search(Request $request){

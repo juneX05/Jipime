@@ -372,6 +372,7 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 var courses_routes = [{
+  name: 'view_courses',
   path: '/courses',
   component: __webpack_require__(/*! ./components/Courses.vue */ "./modules/Course/Vue/components/Courses.vue")["default"]
 }, {
@@ -2583,9 +2584,20 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
+      select_all: false,
+      batch_delete: [],
       editMode: true,
       coursename: '',
       description: '',
@@ -2671,11 +2683,48 @@ __webpack_require__.r(__webpack_exports__);
           _this5.form["delete"]('/api/tests/' + id).then(function () {
             swal.fire('Deleted!', 'Test has been deleted.', 'success');
             Fire.$emit('TestDeleted');
-          })["catch"](function () {
-            swal.fire("Failed", "There was something wrong.", "warning");
+          })["catch"](function (error) {
+            var message = error.response.data.message;
+            swal.fire("Failed", message, "warning");
           });
         }
       });
+    },
+    deleteAllTests: function deleteAllTests() {
+      var _this6 = this;
+
+      swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to delete all tests? You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete them!'
+      }).then(function (result) {
+        if (result.value) {
+          axios.post('/api/tests/batch-delete', {
+            batch_delete: _this6.batch_delete
+          }).then(function () {
+            swal.fire('Deleted!', 'Tests have been deleted.', 'success');
+            Fire.$emit('TestDeleted');
+          })["catch"](function (error) {
+            var message = error.response.data.message;
+            swal.fire("Failed", message, "warning");
+          });
+        }
+      });
+    },
+    selectAll: function selectAll(e) {
+      if (!this.select_all) {
+        var batch_delete = [];
+        this.tests.data.forEach(function (test) {
+          batch_delete.push(test.id);
+        });
+        this.batch_delete = batch_delete;
+      } else {
+        this.batch_delete = [];
+      }
     },
     editModal: function editModal(test) {
       this.editMode = true;
@@ -2689,36 +2738,36 @@ __webpack_require__.r(__webpack_exports__);
       $('#addNew').modal('show');
     },
     loadCourseInfo: function loadCourseInfo() {
-      var _this6 = this;
+      var _this7 = this;
 
       axios.get("/api/courses/" + this.$route.params.id).then(function (_ref2) {
         var data = _ref2.data;
         var course = data;
-        _this6.coursename = course.name;
-        _this6.description = course.description;
-        _this6.duration = course.duration;
+        _this7.coursename = course.name;
+        _this7.description = course.description;
+        _this7.duration = course.duration;
       });
     }
   },
   created: function created() {
-    var _this7 = this;
+    var _this8 = this;
 
     this.loadCourseInfo();
     this.loadTests();
     Fire.$on('TestCreated', function () {
-      _this7.loadTests();
+      _this8.loadTests();
     });
     Fire.$on('TestDeleted', function () {
-      _this7.loadTests();
+      _this8.loadTests();
     });
     Fire.$on('TestUpdated', function () {
-      _this7.loadTests();
+      _this8.loadTests();
     });
     Fire.$on('Searching', function () {
-      var query = _this7.$parent.search;
+      var query = _this8.$parent.search;
       axios.get("/api/findTest?q=" + query).then(function (_ref3) {
         var data = _ref3.data;
-        _this7.tests = data;
+        _this8.tests = data;
       })["catch"](function () {});
     }); // setInterval(() => this.loadTests(),3000);
   }
@@ -2849,11 +2898,23 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
-      editMode: true,
-      courses: {},
+      select_all: false,
+      batch_delete: [],
+      editMode: false,
+      courses: {
+        data: []
+      },
       form: new Form({
         id: '',
         name: '',
@@ -2882,6 +2943,8 @@ __webpack_require__.r(__webpack_exports__);
           text: 'You are uploading a file greater than 2 mb'
         });
       }
+
+      this.editMode = false;
     },
     getResults: function getResults() {
       var _this2 = this;
@@ -2905,6 +2968,8 @@ __webpack_require__.r(__webpack_exports__);
         });
 
         _this3.$Progress.finish();
+
+        _this3.editMode = false;
       })["catch"](function () {
         _this3.$Progress.fail();
       });
@@ -2923,6 +2988,8 @@ __webpack_require__.r(__webpack_exports__);
         });
 
         _this4.$Progress.finish();
+
+        _this4.editMode = false;
       })["catch"](function () {
         _this4.$Progress.fail();
       });
@@ -2953,42 +3020,81 @@ __webpack_require__.r(__webpack_exports__);
           _this6.form["delete"]('api/courses/' + id).then(function () {
             swal.fire('Deleted!', 'Course has been deleted.', 'success');
             Fire.$emit('CourseDeleted');
-          })["catch"](function () {
-            swal.fire("Failed", "There was something wrong.", "warning");
+          })["catch"](function (error) {
+            var message = error.response.data.message;
+            swal.fire("Failed", message, "warning");
           });
         }
       });
     },
+    deleteAllCourses: function deleteAllCourses() {
+      var _this7 = this;
+
+      swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to delete all courses? You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete them!'
+      }).then(function (result) {
+        if (result.value) {
+          axios.post('/api/courses/batch-delete', {
+            batch_delete: _this7.batch_delete
+          }).then(function () {
+            swal.fire('Deleted!', 'Courses have been deleted.', 'success');
+            Fire.$emit('CourseDeleted');
+          })["catch"](function (error) {
+            var message = error.response.data.message;
+            swal.fire("Failed", message, "warning");
+          });
+        }
+      });
+    },
+    selectAll: function selectAll(e) {
+      if (!this.select_all) {
+        var batch_delete = [];
+        this.courses.data.forEach(function (course) {
+          batch_delete.push(course.id);
+        });
+        this.batch_delete = batch_delete;
+      } else {
+        this.batch_delete = [];
+      }
+    },
     editModal: function editModal(course) {
       this.editMode = true;
       this.form.reset();
+      this.$refs.fileupload.value = '';
       $('#addNew').modal('show');
       this.form.fill(course);
     },
     newModal: function newModal() {
       this.editMode = false;
       this.form.reset();
+      this.$refs.fileupload.value = '';
       $('#addNew').modal('show');
     }
   },
   created: function created() {
-    var _this7 = this;
+    var _this8 = this;
 
     this.loadCourses();
     Fire.$on('CourseCreated', function () {
-      _this7.loadCourses();
+      _this8.loadCourses();
     });
     Fire.$on('CourseDeleted', function () {
-      _this7.loadCourses();
+      _this8.loadCourses();
     });
     Fire.$on('CourseUpdated', function () {
-      _this7.loadCourses();
+      _this8.loadCourses();
     });
     Fire.$on('Searching', function () {
-      var query = _this7.$parent.search;
+      var query = _this8.$parent.search;
       axios.get("api/findCourse?q=" + query).then(function (_ref2) {
         var data = _ref2.data;
-        _this7.courses = data;
+        _this8.courses = data;
       })["catch"](function () {});
     }); // setInterval(() => this.loadCourses(),3000);
   }
@@ -3203,6 +3309,11 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
@@ -3211,6 +3322,7 @@ __webpack_require__.r(__webpack_exports__);
       test_id: this.$route.params.id,
       testname: '',
       description: '',
+      course_id: '',
       image: '',
       questions: {},
       lists: [],
@@ -3323,6 +3435,7 @@ __webpack_require__.r(__webpack_exports__);
         _this6.testname = test.name;
         _this6.description = test.description;
         _this6.duration = test.duration;
+        _this6.course_id = test.course.id;
       });
     },
     AddListsField: function AddListsField() {
@@ -3533,6 +3646,10 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
@@ -3582,6 +3699,18 @@ __webpack_require__.r(__webpack_exports__);
               });
             } else if (question.type === 'multiple_choice') {
               question.answers = shuffler(question.answers);
+              var answers_count = 0;
+              question.answers.forEach(function (item) {
+                if (item.isAnswer) {
+                  answers_count++;
+                }
+
+                if (answers_count > 1) {
+                  question['answer_type'] = 'multiple_answers';
+                } else {
+                  question['answer_type'] = 'single_answer';
+                }
+              });
             }
           });
         });
@@ -62453,30 +62582,163 @@ var render = function() {
                   _vm._v("All Tests in Course " + _vm._s(_vm.coursename))
                 ]),
                 _vm._v(" "),
-                _c("div", { staticClass: "card-tools" }, [
-                  _c(
-                    "button",
-                    {
-                      staticClass: "btn btn-primary",
-                      on: { click: _vm.newModal }
-                    },
-                    [
-                      _vm._v("Add Test "),
-                      _c("i", { staticClass: "fas fa-book-open" })
-                    ]
-                  )
-                ])
+                _c(
+                  "div",
+                  { staticClass: "card-tools float-right" },
+                  [
+                    _c(
+                      "router-link",
+                      {
+                        staticClass: "btn btn-primary",
+                        attrs: { to: { name: "view_courses", params: {} } }
+                      },
+                      [
+                        _c("i", { staticClass: "fa fa-arrow-left" }),
+                        _vm._v(" Back\n                        ")
+                      ]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "button",
+                      {
+                        staticClass: "btn btn-primary",
+                        on: { click: _vm.newModal }
+                      },
+                      [
+                        _vm._v("Add Test "),
+                        _c("i", { staticClass: "fas fa-book-open" })
+                      ]
+                    ),
+                    _vm._v(" "),
+                    _vm.select_all
+                      ? _c(
+                          "button",
+                          {
+                            staticClass: "btn btn-danger",
+                            on: { click: _vm.deleteAllTests }
+                          },
+                          [
+                            _vm._v(
+                              "Delete All (" +
+                                _vm._s(_vm.batch_delete.length) +
+                                ") Tests "
+                            ),
+                            _c("i", { staticClass: "fas fa-book-open" })
+                          ]
+                        )
+                      : _vm._e()
+                  ],
+                  1
+                )
               ]),
               _vm._v(" "),
               _c("div", { staticClass: "card-body table-responsive p-0" }, [
                 _c("table", { staticClass: "table table-hover" }, [
-                  _vm._m(0),
+                  _c("thead", [
+                    _c("tr", [
+                      _c("th", [
+                        _c("label", [
+                          _c("input", {
+                            directives: [
+                              {
+                                name: "model",
+                                rawName: "v-model",
+                                value: _vm.select_all,
+                                expression: "select_all"
+                              }
+                            ],
+                            attrs: { type: "checkbox" },
+                            domProps: {
+                              checked: Array.isArray(_vm.select_all)
+                                ? _vm._i(_vm.select_all, null) > -1
+                                : _vm.select_all
+                            },
+                            on: {
+                              click: _vm.selectAll,
+                              change: function($event) {
+                                var $$a = _vm.select_all,
+                                  $$el = $event.target,
+                                  $$c = $$el.checked ? true : false
+                                if (Array.isArray($$a)) {
+                                  var $$v = null,
+                                    $$i = _vm._i($$a, $$v)
+                                  if ($$el.checked) {
+                                    $$i < 0 &&
+                                      (_vm.select_all = $$a.concat([$$v]))
+                                  } else {
+                                    $$i > -1 &&
+                                      (_vm.select_all = $$a
+                                        .slice(0, $$i)
+                                        .concat($$a.slice($$i + 1)))
+                                  }
+                                } else {
+                                  _vm.select_all = $$c
+                                }
+                              }
+                            }
+                          })
+                        ])
+                      ]),
+                      _vm._v(" "),
+                      _c("th", [_vm._v("Name")]),
+                      _vm._v(" "),
+                      _c("th", [_vm._v("Course")]),
+                      _vm._v(" "),
+                      _c("th", [_vm._v("Description")]),
+                      _vm._v(" "),
+                      _c("th", [_vm._v("Duration")]),
+                      _vm._v(" "),
+                      _c("th", [_vm._v("Added At")]),
+                      _vm._v(" "),
+                      _c("th", [_vm._v("Modify")])
+                    ])
+                  ]),
                   _vm._v(" "),
                   _c(
                     "tbody",
                     _vm._l(_vm.tests.data, function(test) {
                       return _c("tr", { key: test.id }, [
-                        _c("td", [_vm._v(_vm._s(test.id))]),
+                        _c("td", [
+                          _c("input", {
+                            directives: [
+                              {
+                                name: "model",
+                                rawName: "v-model",
+                                value: _vm.batch_delete,
+                                expression: "batch_delete"
+                              }
+                            ],
+                            attrs: { type: "checkbox" },
+                            domProps: {
+                              value: test.id,
+                              checked: Array.isArray(_vm.batch_delete)
+                                ? _vm._i(_vm.batch_delete, test.id) > -1
+                                : _vm.batch_delete
+                            },
+                            on: {
+                              change: function($event) {
+                                var $$a = _vm.batch_delete,
+                                  $$el = $event.target,
+                                  $$c = $$el.checked ? true : false
+                                if (Array.isArray($$a)) {
+                                  var $$v = test.id,
+                                    $$i = _vm._i($$a, $$v)
+                                  if ($$el.checked) {
+                                    $$i < 0 &&
+                                      (_vm.batch_delete = $$a.concat([$$v]))
+                                  } else {
+                                    $$i > -1 &&
+                                      (_vm.batch_delete = $$a
+                                        .slice(0, $$i)
+                                        .concat($$a.slice($$i + 1)))
+                                  }
+                                } else {
+                                  _vm.batch_delete = $$c
+                                }
+                              }
+                            }
+                          })
+                        ]),
                         _vm._v(" "),
                         _c("td", [_vm._v(_vm._s(test.name))]),
                         _vm._v(" "),
@@ -62618,7 +62880,7 @@ var render = function() {
                       [_vm._v("Update Test's Info")]
                     ),
                     _vm._v(" "),
-                    _vm._m(1)
+                    _vm._m(0)
                   ]),
                   _vm._v(" "),
                   _c(
@@ -62824,28 +63086,6 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("thead", [
-      _c("tr", [
-        _c("th", [_vm._v("ID")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Name")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Course")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Description")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Duration")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Added At")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Modify")])
-      ])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
     return _c(
       "button",
       {
@@ -62881,7 +63121,7 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c("div", { staticClass: "container" }, [
+  return _c("div", {}, [
     _c("div", { staticClass: "row" }, [
       _c("div", { staticClass: "col-md-12" }, [
         _vm.$gate.isAdmin()
@@ -62902,87 +63142,251 @@ var render = function() {
                       _vm._v("Add New "),
                       _c("i", { staticClass: "fas fa-book-open" })
                     ]
-                  )
+                  ),
+                  _vm._v(" "),
+                  _vm.select_all
+                    ? _c(
+                        "button",
+                        {
+                          staticClass: "btn btn-danger",
+                          on: { click: _vm.deleteAllCourses }
+                        },
+                        [
+                          _vm._v(
+                            "Delete All (" +
+                              _vm._s(_vm.batch_delete.length) +
+                              ") Courses "
+                          ),
+                          _c("i", { staticClass: "fas fa-book-open" })
+                        ]
+                      )
+                    : _vm._e()
                 ])
               ]),
               _vm._v(" "),
-              _c("div", { staticClass: "card-body table-responsive p-0" }, [
-                _c("table", { staticClass: "table table-hover" }, [
-                  _vm._m(0),
-                  _vm._v(" "),
-                  _c(
-                    "tbody",
-                    _vm._l(_vm.courses.data, function(course) {
-                      return _c("tr", { key: course.id }, [
-                        _c("td", [_vm._v(_vm._s(course.id))]),
-                        _vm._v(" "),
-                        _c("td", [_vm._v(_vm._s(course.name))]),
-                        _vm._v(" "),
-                        _c("td", [_vm._v(_vm._s(course.description))]),
-                        _vm._v(" "),
-                        _c("td", [
-                          _c("img", {
-                            attrs: {
-                              src: "./img/course/" + course.image,
-                              width: "100px",
-                              height: "100px"
+              _c("div", { staticClass: "card-body p-0" }, [
+                _c("div", { staticClass: "col-sm-12" }, [
+                  _c("label", [
+                    _c("input", {
+                      directives: [
+                        {
+                          name: "model",
+                          rawName: "v-model",
+                          value: _vm.select_all,
+                          expression: "select_all"
+                        }
+                      ],
+                      staticClass: "mt-3",
+                      attrs: { type: "checkbox" },
+                      domProps: {
+                        checked: Array.isArray(_vm.select_all)
+                          ? _vm._i(_vm.select_all, null) > -1
+                          : _vm.select_all
+                      },
+                      on: {
+                        click: _vm.selectAll,
+                        change: function($event) {
+                          var $$a = _vm.select_all,
+                            $$el = $event.target,
+                            $$c = $$el.checked ? true : false
+                          if (Array.isArray($$a)) {
+                            var $$v = null,
+                              $$i = _vm._i($$a, $$v)
+                            if ($$el.checked) {
+                              $$i < 0 && (_vm.select_all = $$a.concat([$$v]))
+                            } else {
+                              $$i > -1 &&
+                                (_vm.select_all = $$a
+                                  .slice(0, $$i)
+                                  .concat($$a.slice($$i + 1)))
                             }
-                          })
-                        ]),
-                        _vm._v(" "),
-                        _c("td", [
-                          _vm._v(_vm._s(_vm._f("myDate")(course.created_at)))
-                        ]),
-                        _vm._v(" "),
-                        _c(
-                          "td",
-                          [
+                          } else {
+                            _vm.select_all = $$c
+                          }
+                        }
+                      }
+                    }),
+                    _vm._v(
+                      "\n                            Select All\n                        "
+                    )
+                  ])
+                ]),
+                _vm._v(" "),
+                _c("div", { staticClass: "container" }, [
+                  _c(
+                    "div",
+                    {
+                      staticClass: "row",
+                      staticStyle: { width: "100%", margin: "0" }
+                    },
+                    _vm._l(_vm.courses.data, function(course) {
+                      return _c(
+                        "div",
+                        { key: course.id, staticClass: "card col-md-4" },
+                        [
+                          _c("div", { staticClass: "card-body" }, [
                             _c(
-                              "a",
-                              {
-                                attrs: { href: "#" },
-                                on: {
-                                  click: function($event) {
-                                    return _vm.editModal(course)
+                              "div",
+                              { staticClass: "col-sm-12 text-center" },
+                              [
+                                _c("img", {
+                                  staticClass: "card-img-top",
+                                  staticStyle: {
+                                    width: "50px",
+                                    height: "50px"
+                                  },
+                                  attrs: {
+                                    src: "/img/course/" + course.image,
+                                    alt: course.name
                                   }
-                                }
-                              },
-                              [_c("i", { staticClass: "fa fa-edit orange" })]
+                                }),
+                                _vm._v(" "),
+                                _c("input", {
+                                  directives: [
+                                    {
+                                      name: "model",
+                                      rawName: "v-model",
+                                      value: _vm.batch_delete,
+                                      expression: "batch_delete"
+                                    }
+                                  ],
+                                  attrs: { type: "checkbox" },
+                                  domProps: {
+                                    value: course.id,
+                                    checked: Array.isArray(_vm.batch_delete)
+                                      ? _vm._i(_vm.batch_delete, course.id) > -1
+                                      : _vm.batch_delete
+                                  },
+                                  on: {
+                                    change: function($event) {
+                                      var $$a = _vm.batch_delete,
+                                        $$el = $event.target,
+                                        $$c = $$el.checked ? true : false
+                                      if (Array.isArray($$a)) {
+                                        var $$v = course.id,
+                                          $$i = _vm._i($$a, $$v)
+                                        if ($$el.checked) {
+                                          $$i < 0 &&
+                                            (_vm.batch_delete = $$a.concat([
+                                              $$v
+                                            ]))
+                                        } else {
+                                          $$i > -1 &&
+                                            (_vm.batch_delete = $$a
+                                              .slice(0, $$i)
+                                              .concat($$a.slice($$i + 1)))
+                                        }
+                                      } else {
+                                        _vm.batch_delete = $$c
+                                      }
+                                    }
+                                  }
+                                }),
+                                _vm._v(" "),
+                                _c(
+                                  "h4",
+                                  { staticClass: "card-title col-sm-12 pt-3" },
+                                  [_vm._v(_vm._s(course.name))]
+                                )
+                              ]
                             ),
-                            _vm._v(
-                              "\n                                /\n                                "
-                            ),
+                            _vm._v(" "),
+                            _c("div", { staticClass: "col-sm-12" }, [
+                              _c(
+                                "p",
+                                { staticClass: "card-text description" },
+                                [
+                                  _vm._v(
+                                    _vm._s(
+                                      _vm._f("truncate")(course.description)
+                                    )
+                                  )
+                                ]
+                              ),
+                              _vm._v(" "),
+                              _c("p", { staticClass: "card-text" }, [
+                                _c("span", [
+                                  _c("b", [_vm._v("Added:")]),
+                                  _vm._v(
+                                    " " +
+                                      _vm._s(
+                                        _vm._f("myDate")(course.created_at)
+                                      )
+                                  )
+                                ])
+                              ])
+                            ])
+                          ]),
+                          _vm._v(" "),
+                          _c("div", { staticClass: "card-footer" }, [
                             _c(
-                              "a",
-                              {
-                                attrs: { href: "#" },
-                                on: {
-                                  click: function($event) {
-                                    return _vm.deleteCourse(course.id)
-                                  }
-                                }
-                              },
-                              [_c("i", { staticClass: "fa fa-trash red" })]
-                            ),
-                            _vm._v(
-                              "\n                                /\n                                "
-                            ),
-                            _c(
-                              "router-link",
-                              {
-                                attrs: {
-                                  to: {
-                                    name: "view_course",
-                                    params: { id: course.id }
-                                  }
-                                }
-                              },
-                              [_c("i", { staticClass: "fa fa-eye blue" })]
+                              "div",
+                              { staticClass: "row" },
+                              [
+                                _c(
+                                  "a",
+                                  {
+                                    staticClass: "col-sm-12",
+                                    attrs: { href: "#" },
+                                    on: {
+                                      click: function($event) {
+                                        return _vm.editModal(course)
+                                      }
+                                    }
+                                  },
+                                  [
+                                    _c("i", {
+                                      staticClass: "fa fa-edit orange"
+                                    }),
+                                    _vm._v(
+                                      " Edit\n                                        "
+                                    )
+                                  ]
+                                ),
+                                _vm._v(" "),
+                                _c(
+                                  "a",
+                                  {
+                                    staticClass: "col-sm-12",
+                                    attrs: { href: "#" },
+                                    on: {
+                                      click: function($event) {
+                                        return _vm.deleteCourse(course.id)
+                                      }
+                                    }
+                                  },
+                                  [
+                                    _c("i", { staticClass: "fa fa-trash red" }),
+                                    _vm._v(
+                                      " Delete\n                                        "
+                                    )
+                                  ]
+                                ),
+                                _vm._v(" "),
+                                _c(
+                                  "router-link",
+                                  {
+                                    staticClass: "col-sm-12",
+                                    attrs: {
+                                      to: {
+                                        name: "view_course",
+                                        params: { id: course.id }
+                                      }
+                                    }
+                                  },
+                                  [
+                                    _c("i", { staticClass: "fa fa-eye blue" }),
+                                    _vm._v(
+                                      " View Course\n                                        "
+                                    )
+                                  ]
+                                )
+                              ],
+                              1
                             )
-                          ],
-                          1
-                        )
-                      ])
+                          ])
+                        ]
+                      )
                     }),
                     0
                   )
@@ -63062,7 +63466,7 @@ var render = function() {
                       [_vm._v("Update Course's Info")]
                     ),
                     _vm._v(" "),
-                    _vm._m(1)
+                    _vm._m(0)
                   ]),
                   _vm._v(" "),
                   _c(
@@ -63166,11 +63570,23 @@ var render = function() {
                         _vm._v(" "),
                         _c(
                           "div",
-                          { staticClass: "form-group col-md-6" },
+                          { staticClass: "form-group" },
                           [
                             _c("label", [_vm._v("Course Image")]),
                             _vm._v(" "),
+                            _c("img", {
+                              staticClass: "card-img-top",
+                              staticStyle: { width: "50px", height: "50px" },
+                              attrs: {
+                                src: _vm.editMode
+                                  ? "/img/course/" + _vm.form.image
+                                  : _vm.form.image,
+                                alt: _vm.form.name
+                              }
+                            }),
+                            _vm._v(" "),
                             _c("input", {
+                              ref: "fileupload",
                               staticClass: "form-control",
                               class: {
                                 "is-invalid": _vm.form.errors.has("image")
@@ -63246,26 +63662,6 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("thead", [
-      _c("tr", [
-        _c("th", [_vm._v("ID")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Name")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Description")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Image")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Added At")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Modify")])
-      ])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
     return _c(
       "button",
       {
@@ -63327,24 +63723,41 @@ var render = function() {
                 _vm._v(" "),
                 _c(
                   "div",
-                  { staticClass: "card-tools" },
+                  { staticClass: "card-tools float-right" },
                   [
-                    _c(
-                      "button",
-                      {
-                        staticClass: "btn btn-primary",
-                        on: { click: _vm.newModal }
-                      },
-                      [
-                        _vm._v("Add Question "),
-                        _c("i", { staticClass: "fas fa-book-open" })
-                      ]
-                    ),
-                    _vm._v("  \n                        "),
                     _c(
                       "router-link",
                       {
-                        staticClass: "btn btn-primary float-right",
+                        staticClass: "btn btn-primary",
+                        attrs: {
+                          to: {
+                            name: "view_course",
+                            params: { id: _vm.form.test_id }
+                          }
+                        }
+                      },
+                      [
+                        _c("i", { staticClass: "fa fa-arrow-left" }),
+                        _vm._v(" Back\n                        ")
+                      ]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "button",
+                      {
+                        staticClass: "btn btn-primary ",
+                        on: { click: _vm.newModal }
+                      },
+                      [
+                        _vm._v("Add Question  "),
+                        _c("i", { staticClass: "fas fa-book-open" })
+                      ]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "router-link",
+                      {
+                        staticClass: "btn btn-primary",
                         attrs: {
                           to: {
                             name: "preview_test",
@@ -64443,43 +64856,158 @@ var render = function() {
                                 { staticClass: "form-group" },
                                 _vm._l(question.answers, function(choice) {
                                   return _c("label", [
-                                    _c("input", {
-                                      directives: [
-                                        {
-                                          name: "model",
-                                          rawName: "v-model",
-                                          value:
-                                            _vm.form.answers.multiple_choice[
-                                              "qn_" + question.id
-                                            ],
-                                          expression:
-                                            " form.answers.multiple_choice['qn_'+question.id] "
-                                        }
-                                      ],
-                                      key: choice.id,
-                                      attrs: {
-                                        type: "radio",
-                                        name: "qn_" + question.id
-                                      },
-                                      domProps: {
-                                        value: choice.id,
-                                        checked: _vm._q(
-                                          _vm.form.answers.multiple_choice[
-                                            "qn_" + question.id
+                                    question.answer_type === "single_answer"
+                                      ? _c("input", {
+                                          directives: [
+                                            {
+                                              name: "model",
+                                              rawName: "v-model",
+                                              value:
+                                                _vm.form.answers
+                                                  .multiple_choice[
+                                                  "qn_" + question.id
+                                                ],
+                                              expression:
+                                                " form.answers.multiple_choice['qn_'+question.id] "
+                                            }
                                           ],
-                                          choice.id
-                                        )
-                                      },
-                                      on: {
-                                        change: function($event) {
-                                          return _vm.$set(
-                                            _vm.form.answers.multiple_choice,
-                                            "qn_" + question.id,
-                                            choice.id
-                                          )
-                                        }
-                                      }
-                                    }),
+                                          key: choice.id,
+                                          attrs: {
+                                            type: "radio",
+                                            name: "qn_" + question.id
+                                          },
+                                          domProps: {
+                                            value: choice.id,
+                                            checked: _vm._q(
+                                              _vm.form.answers.multiple_choice[
+                                                "qn_" + question.id
+                                              ],
+                                              choice.id
+                                            )
+                                          },
+                                          on: {
+                                            change: function($event) {
+                                              return _vm.$set(
+                                                _vm.form.answers
+                                                  .multiple_choice,
+                                                "qn_" + question.id,
+                                                choice.id
+                                              )
+                                            }
+                                          }
+                                        })
+                                      : _vm._e(),
+                                    _vm._v(" "),
+                                    question.answer_type !== "single_answer"
+                                      ? _c("input", {
+                                          directives: [
+                                            {
+                                              name: "model",
+                                              rawName: "v-model",
+                                              value:
+                                                _vm.form.answers
+                                                  .multiple_choice[
+                                                  "qn_" +
+                                                    question.id +
+                                                    "_" +
+                                                    choice.id
+                                                ],
+                                              expression:
+                                                " form.answers.multiple_choice['qn_'+question.id+'_'+choice.id] "
+                                            }
+                                          ],
+                                          key: choice.id,
+                                          attrs: {
+                                            type: "checkbox",
+                                            name: "qn_" + question.id
+                                          },
+                                          domProps: {
+                                            value: choice.id,
+                                            checked: Array.isArray(
+                                              _vm.form.answers.multiple_choice[
+                                                "qn_" +
+                                                  question.id +
+                                                  "_" +
+                                                  choice.id
+                                              ]
+                                            )
+                                              ? _vm._i(
+                                                  _vm.form.answers
+                                                    .multiple_choice[
+                                                    "qn_" +
+                                                      question.id +
+                                                      "_" +
+                                                      choice.id
+                                                  ],
+                                                  choice.id
+                                                ) > -1
+                                              : _vm.form.answers
+                                                  .multiple_choice[
+                                                  "qn_" +
+                                                    question.id +
+                                                    "_" +
+                                                    choice.id
+                                                ]
+                                          },
+                                          on: {
+                                            change: function($event) {
+                                              var $$a =
+                                                  _vm.form.answers
+                                                    .multiple_choice[
+                                                    "qn_" +
+                                                      question.id +
+                                                      "_" +
+                                                      choice.id
+                                                  ],
+                                                $$el = $event.target,
+                                                $$c = $$el.checked
+                                                  ? true
+                                                  : false
+                                              if (Array.isArray($$a)) {
+                                                var $$v = choice.id,
+                                                  $$i = _vm._i($$a, $$v)
+                                                if ($$el.checked) {
+                                                  $$i < 0 &&
+                                                    _vm.$set(
+                                                      _vm.form.answers
+                                                        .multiple_choice,
+                                                      "qn_" +
+                                                        question.id +
+                                                        "_" +
+                                                        choice.id,
+                                                      $$a.concat([$$v])
+                                                    )
+                                                } else {
+                                                  $$i > -1 &&
+                                                    _vm.$set(
+                                                      _vm.form.answers
+                                                        .multiple_choice,
+                                                      "qn_" +
+                                                        question.id +
+                                                        "_" +
+                                                        choice.id,
+                                                      $$a
+                                                        .slice(0, $$i)
+                                                        .concat(
+                                                          $$a.slice($$i + 1)
+                                                        )
+                                                    )
+                                                }
+                                              } else {
+                                                _vm.$set(
+                                                  _vm.form.answers
+                                                    .multiple_choice,
+                                                  "qn_" +
+                                                    question.id +
+                                                    "_" +
+                                                    choice.id,
+                                                  $$c
+                                                )
+                                              }
+                                            }
+                                          }
+                                        })
+                                      : _vm._e(),
                                     _vm._v(
                                       "\n                                            " +
                                         _vm._s(choice.answer) +
@@ -64722,6 +65250,12 @@ var render = function() {
                                 ]
                               )
                             ])
+                          : _vm._e(),
+                        _vm._v(" "),
+                        question.answer_type === "multiple_answers"
+                          ? _c("div", { staticClass: "form-group" }, [
+                              _vm._m(1, true)
+                            ])
                           : _vm._e()
                       ])
                     ])
@@ -64747,6 +65281,20 @@ var staticRenderFns = [
         _c("th", [_vm._v("List A")]),
         _vm._v(" "),
         _c("th", [_vm._v("List B")])
+      ])
+    ])
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("p", { staticClass: "red" }, [
+      _c("b", [_vm._v("Note:")]),
+      _vm._v(" "),
+      _c("i", [
+        _vm._v(
+          "This question has more than one answer, select all of the possible answers."
+        )
       ])
     ])
   }
@@ -81233,6 +81781,11 @@ Vue.filter('upText', function (text) {
 });
 Vue.filter('myDate', function (date) {
   return moment__WEBPACK_IMPORTED_MODULE_1___default()(date).format('MMMM Do YYYY');
+});
+Vue.filter('truncate', function (text) {
+  var length = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 50;
+  var suffix = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '...';
+  return text.substring(0, length) + (text.length > 50 ? suffix : '');
 });
 window.Fire = new Vue();
 /**

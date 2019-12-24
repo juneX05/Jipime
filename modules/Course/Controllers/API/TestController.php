@@ -21,7 +21,7 @@ class TestController extends Controller
      */
     public function index($course_id)
     {
-        return Test::with('course')
+        return Test::with(['course','questions'])
             ->where('course_id','=',$course_id)
             ->paginate(20);
     }
@@ -57,7 +57,8 @@ class TestController extends Controller
      */
     public function show($id)
     {
-        return Test::with('course')->findOrFail($id);
+        return Test::with(['course','questions'])
+            ->findOrFail($id);
     }
 
     /**
@@ -70,7 +71,8 @@ class TestController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $test = Test::with('course')->findOrFail($id);
+        $test = Test::with(['course','questions'])
+            ->findOrFail($id);
         $this->validate($request,[
             'name'=> 'required|string|max:191|unique:tests,name,'.$test->id,
             'description'=> 'required|string|max:191',
@@ -93,10 +95,50 @@ class TestController extends Controller
     public function destroy($id)
     {
         $this->authorize('isAdmin');
-        $test = Test::findOrFail($id);
-        $test->delete();
+        $test = Test::with(['course','questions'])
+            ->findOrFail($id);
 
-        return ['message' => "User Deleted"];
+        //implementing safe delete.
+        if ($this->questionsPresent($test)){
+            return response()->json(['message' => "Please remove all questions in $test->name before deleting"],422);
+        }
+        $this->deleteTest($test);
+
+        return ['message' => "Test Deleted"];
+    }
+
+    protected function questionsPresent($test){
+        $questions =  count($test->questions);
+        return $questions > 0;
+    }
+
+    protected function deleteTest($test){
+        $test->delete();
+    }
+
+    /**
+     * Remove the specified resources from storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function destroyAll(Request $request)
+    {
+        $this->authorize('isAdmin');
+
+        foreach ($request->batch_delete as $id)
+        {
+            $test = Test::with('questions')->findOrFail($id);
+
+            //implementing safe delete.
+            if ($this->questionsPresent($test)){
+                return response()->json(['message' => "Please remove all questions in $test->name before deleting"],422);
+            }
+            $this->deleteTest($test);
+        }
+
+        return response()->json(['message' => 'All Tests deleted successfully']);
     }
 
     public function search(Request $request){

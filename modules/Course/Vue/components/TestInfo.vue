@@ -18,12 +18,17 @@
                     <div class="card-header">
                         <h3 class="card-title">All Questions in Test {{testname}}</h3>
 
-                        <div class="card-tools">
-                            <button class="btn btn-primary" @click="newModal">Add Question <i class="fas fa-book-open"></i></button> &nbsp;
-                            <router-link class="btn btn-primary float-right"
+                        <div class="card-tools float-right">
+                            <router-link class="btn btn-primary"
+                                         :to="{ name: 'view_course', params: { id: form.test_id }}">
+                                <i class="fa fa-arrow-left"></i> Back
+                            </router-link>
+                            <button class="btn btn-primary " @click="newModal">Add Question &nbsp;<i class="fas fa-book-open"></i></button>
+                            <router-link class="btn btn-primary"
                                          :to="{ name: 'preview_test', params: { id: test_id }}">
                                 <i class="fa fa-eye"></i> Preview Test
                             </router-link>
+
                         </div>
                     </div>
                     <!-- /.card-header -->
@@ -205,6 +210,7 @@
                 test_id: this.$route.params.id,
                 testname: '',
                 description: '',
+                course_id: '',
                 image: '',
                 questions:{},
                 lists:[],
@@ -324,6 +330,7 @@
                         this.testname = test.name;
                         this.description = test.description;
                         this.duration = test.duration;
+                        this.course_id = test.course.id;
                     })
             },
             AddListsField() {

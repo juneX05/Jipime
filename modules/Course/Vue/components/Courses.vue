@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class="">
         <div class="row">
             <div class="col-md-12" >
 
@@ -9,45 +9,53 @@
 
                         <div class="card-tools">
                             <button class="btn btn-primary" @click="newModal">Add New <i class="fas fa-book-open"></i></button>
+
+                            <button class="btn btn-danger" v-if="select_all" @click="deleteAllCourses">Delete All ({{batch_delete.length}}) Courses <i class="fas fa-book-open"></i></button>
                         </div>
                     </div>
                     <!-- /.card-header -->
-                    <div class="card-body table-responsive p-0">
-                        <table class="table table-hover">
-                            <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Image</th>
-                                <th>Added At</th>
-                                <th>Modify</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr v-for="course in courses.data" :key="course.id">
-                                <td>{{course.id}}</td>
-                                <td>{{course.name}}</td>
-                                <td>{{course.description}}</td>
-                                <td><img :src=" './img/course/'+course.image" width="100px" height="100px" /></td>
-                                <td>{{course.created_at | myDate}}</td>
-                                <td>
-                                    <a href="#" @click="editModal(course)">
-                                        <i class="fa fa-edit orange"></i>
-                                    </a>
-                                    /
-                                    <a href="#" @click="deleteCourse(course.id)">
-                                        <i class="fa fa-trash red"></i>
-                                    </a>
-                                    /
-                                    <router-link :to="{ name: 'view_course', params: { id: course.id }}">
-                                        <i class="fa fa-eye blue"></i>
-                                    </router-link>
-                                </td>
-                            </tr>
+                    <div class="card-body p-0">
+                        <div class="col-sm-12">
+                            <label>
+                                <input class="mt-3" v-model="select_all" type="checkbox" @click="selectAll" />
+                                Select All
+                            </label>
+                        </div>
+                        <div class="container">
+                            <div class="row" style="width: 100%; margin: 0;">
+                                <div class="card col-md-4" v-for="course in courses.data" :key="course.id">
+                                    <div class="card-body">
+                                        <div class="col-sm-12 text-center">
+                                            <img class="card-img-top" :src=" '/img/course/'+course.image" :alt="course.name" style="width: 50px; height: 50px;"/>
+                                            <input v-model="batch_delete" type="checkbox" :value="course.id" />
+                                            <h4 class="card-title col-sm-12 pt-3">{{course.name}}</h4>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <p class="card-text description">{{course.description | truncate}}</p>
+                                            <p class="card-text">
+                                                <span><b>Added:</b> {{course.created_at | myDate}}</span>
+                                            </p>
+                                        </div>
 
-                            </tbody>
-                        </table>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="row">
+                                            <a href="#" class="col-sm-12" @click="editModal(course)">
+                                                <i class="fa fa-edit orange"></i> Edit
+                                            </a>
+                                            <a href="#" class="col-sm-12" @click="deleteCourse(course.id)">
+                                                <i class="fa fa-trash red"></i> Delete
+                                            </a>
+                                            <router-link class="col-sm-12" :to="{ name: 'view_course', params: { id: course.id }}">
+                                                <i class="fa fa-eye blue"></i> View Course
+                                            </router-link>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
                     </div>
                     <!-- /.card-body -->
                     <div class="card-footer">
@@ -90,14 +98,14 @@
                                 <has-error :form="form" field="description"></has-error>
                             </div>
 
-                            <div class="form-group col-md-6">
+                            <div class="form-group">
                                 <label>Course Image</label>
-                                <input  type="file" name="image"
+                                <img class="card-img-top":src=" editMode ? '/img/course/'+form.image : form.image " :alt="form.name" style="width: 50px; height: 50px;"/>
+                                <input  type="file" name="image" ref="fileupload"
                                         @change="updateCoursePhoto"
                                         class="form-control" :class="{ 'is-invalid': form.errors.has('image') }">
                                 <has-error :form="form" field="image"></has-error>
                             </div>
-
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
@@ -116,8 +124,12 @@
     export default {
         data(){
             return {
-                editMode:true,
-                courses: {},
+                select_all:false,
+                batch_delete:[],
+                editMode:false,
+                courses: {
+                    data : [],
+                },
                 form : new Form({
                     id:'',
                     name: '',
@@ -137,14 +149,14 @@
                     };
                     reader.readAsDataURL(file);
                 }
-                else{
+                else {
                     swal.fire({
                         type: 'error',
                         title: 'Oops...',
                         text:'You are uploading a file greater than 2 mb'
                     })
                 }
-
+                this.editMode = false;
             },
             getResults(page=1){
                 axios.get('api/courses?page='+page)
@@ -167,6 +179,7 @@
                         });
 
                         this.$Progress.finish();
+                        this.editMode = false;
                     })
                     .catch( () => {
                         this.$Progress.fail();
@@ -187,6 +200,8 @@
                         });
 
                         this.$Progress.finish();
+
+                        this.editMode = false;
                     })
                     .catch( () => {
                         this.$Progress.fail();
@@ -195,7 +210,7 @@
             loadCourses(){
                 if (this.$gate.isAdmin() || this.$gate.isAuthor()){
                     axios.get("api/courses")
-                        .then(({ data }) => {this.courses = data})
+                        .then(({ data }) => {this.courses = data});
                 }
 
             },
@@ -220,23 +235,68 @@
                                 );
                                 Fire.$emit('CourseDeleted');
                             })
-                            .catch(() => {
-                                swal.fire("Failed","There was something wrong.","warning");
+                            .catch((error) => {
+                                let message = error.response.data.message;
+                                swal.fire("Failed",message,"warning");
                             })
                     }
 
                 });
 
             },
+            deleteAllCourses(){
+                swal.fire({
+                    title: 'Are you sure?',
+                    text: "Do you want to delete all courses? You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete them!'
+                }).then((result) => {
+                    if (result.value)
+                    {
+                        axios.post('/api/courses/batch-delete',{batch_delete :this.batch_delete})
+                            .then(() => {
+                                swal.fire(
+                                    'Deleted!',
+                                    'Courses have been deleted.',
+                                    'success'
+                                );
+                                Fire.$emit('CourseDeleted');
+                            })
+                            .catch((error) => {
+                                let message = error.response.data.message;
+                                swal.fire("Failed",message,"warning");
+                            })
+                    }
+
+                });
+
+            },
+            selectAll(e){
+                if (!this.select_all) {
+                    let batch_delete = [];
+                    this.courses.data.forEach(function (course) {
+                        batch_delete.push(course.id);
+                    });
+                    this.batch_delete = batch_delete;
+                }
+                else{
+                    this.batch_delete = [];
+                }
+            },
             editModal(course){
                 this.editMode = true;
                 this.form.reset();
+                this.$refs.fileupload.value = '';
                 $('#addNew').modal('show');
                 this.form.fill(course);
             },
             newModal(){
                 this.editMode = false;
                 this.form.reset();
+                this.$refs.fileupload.value = '';
                 $('#addNew').modal('show')
             }
         },

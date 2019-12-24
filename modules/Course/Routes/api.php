@@ -4,6 +4,7 @@ Route::apiResources([
     'courses' => 'CourseController',
 ]);
 Route::get('findCourse','CourseController@search');
+Route::post('/courses/batch-delete','CourseController@destroyAll');
 
 Route::get('/tests/course/{course_id}','TestController@index');
 Route::post('/tests','TestController@store');
@@ -11,6 +12,7 @@ Route::put('/tests/{id}','TestController@update');
 Route::get('/tests/{id}','TestController@show');
 Route::delete('/tests/{id}','TestController@destroy');
 Route::get('findTest','TestController@search');
+Route::post('/tests/batch-delete','TestController@destroyAll');
 
 Route::get('/questions/test/{test_id}','QuestionController@index');
 Route::get('/questions/preview/test/{test_id}','QuestionController@getTestQuestions');

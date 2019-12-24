@@ -127,13 +127,52 @@ class CourseController extends Controller
     {
         $this->authorize('isAdmin');
         $course = Course::with('tests')->findOrFail($id);
+
+        //implementing safe delete.
+        if ($this->testsPresent($course)){
+            return response()->json(['message' => "Please remove all tests in $course->name before deleting"],422);
+        }
+        $this->deleteCourse($course);
+
+        return ['message' => "Course Deleted"];
+    }
+
+    protected function testsPresent($course){
+        $tests =  count($course->tests);
+        return $tests > 0;
+    }
+
+    protected function deleteCourse($course){
         $course->delete();
-        //delete the user
         $coursePhoto = public_path('img/course/').$course->image;
         if (file_exists($coursePhoto)){
             @unlink($coursePhoto);
         }
-        return ['message' => "User Deleted"];
+    }
+
+    /**
+     * Remove the specified resources from storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function destroyAll(Request $request)
+    {
+        $this->authorize('isAdmin');
+
+        foreach ($request->batch_delete as $id)
+        {
+            $course = Course::with('tests')->findOrFail($id);
+
+            //implementing safe delete.
+            if ($this->testsPresent($course)){
+                return response()->json(['message' => "Please remove all tests in $course->name before deleting"],422);
+            }
+            $this->deleteCourse($course);
+        }
+
+        return response()->json(['message' => 'All Courses deleted successfully']);
     }
 
     public function search(Request $request){

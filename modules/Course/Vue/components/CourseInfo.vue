@@ -18,8 +18,15 @@
                     <div class="card-header">
                         <h3 class="card-title">All Tests in Course {{coursename}}</h3>
 
-                        <div class="card-tools">
+
+                        <div class="card-tools float-right">
+                            <router-link class="btn btn-primary"
+                                         :to="{ name: 'view_courses', params: {  }}">
+                                <i class="fa fa-arrow-left"></i> Back
+                            </router-link>
+
                             <button class="btn btn-primary" @click="newModal">Add Test <i class="fas fa-book-open"></i></button>
+                            <button class="btn btn-danger" v-if="select_all" @click="deleteAllTests">Delete All ({{batch_delete.length}}) Tests <i class="fas fa-book-open"></i></button>
                         </div>
                     </div>
                     <!-- /.card-header -->
@@ -27,7 +34,9 @@
                         <table class="table table-hover">
                             <thead>
                             <tr>
-                                <th>ID</th>
+                                <th><label>
+                                    <input v-model="select_all" type="checkbox" @click="selectAll" />
+                                </label></th>
                                 <th>Name</th>
                                 <th>Course</th>
                                 <th>Description</th>
@@ -38,7 +47,7 @@
                             </thead>
                             <tbody>
                             <tr v-for="test in tests.data" :key="test.id">
-                                <td>{{test.id}}</td>
+                                <td><input v-model="batch_delete" type="checkbox" :value="test.id" /></td>
                                 <td>{{test.name}}</td>
                                 <td>{{test.course.name}}</td>
                                 <td>{{test.description}}</td>
@@ -128,6 +137,8 @@
     export default {
         data(){
             return {
+                select_all:false,
+                batch_delete:[],
                 editMode:true,
                 coursename: '',
                 description: '',
@@ -220,13 +231,56 @@
                                 );
                                 Fire.$emit('TestDeleted');
                             })
-                            .catch(() => {
-                                swal.fire("Failed","There was something wrong.","warning");
+                            .catch((error) => {
+                                let message = error.response.data.message;
+                                swal.fire("Failed",message,"warning");
                             })
                     }
 
                 });
 
+            },
+            deleteAllTests(){
+                swal.fire({
+                    title: 'Are you sure?',
+                    text: "Do you want to delete all tests? You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete them!'
+                }).then((result) => {
+                    if (result.value)
+                    {
+                        axios.post('/api/tests/batch-delete',{batch_delete :this.batch_delete})
+                            .then(() => {
+                                swal.fire(
+                                    'Deleted!',
+                                    'Tests have been deleted.',
+                                    'success'
+                                );
+                                Fire.$emit('TestDeleted');
+                            })
+                            .catch((error) => {
+                                let message = error.response.data.message;
+                                swal.fire("Failed",message,"warning");
+                            })
+                    }
+
+                });
+
+            },
+            selectAll(e){
+                if (!this.select_all) {
+                    let batch_delete = [];
+                    this.tests.data.forEach(function (test) {
+                        batch_delete.push(test.id);
+                    });
+                    this.batch_delete = batch_delete;
+                }
+                else{
+                    this.batch_delete = [];
+                }
             },
             editModal(test){
                 this.editMode = true;

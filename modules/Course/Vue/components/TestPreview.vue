@@ -35,8 +35,12 @@
                                         </p>
                                         <div class="form-group">
                                             <label v-for="choice in question.answers">
-                                                <input type="radio"
+                                                <input type="radio" v-if="question.answer_type === 'single_answer'"
                                                        v-model=" form.answers.multiple_choice['qn_'+question.id] "
+                                                       :key="choice.id" :name=" 'qn_'+question.id" :value="choice.id"
+                                                />
+                                                <input type="checkbox" v-if="question.answer_type !== 'single_answer'"
+                                                       v-model=" form.answers.multiple_choice['qn_'+question.id+'_'+choice.id] "
                                                        :key="choice.id" :name=" 'qn_'+question.id" :value="choice.id"
                                                 />
                                                 {{choice.answer}} &nbsp;&nbsp;
@@ -95,13 +99,13 @@
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <div class="form-group" v-if="question.answer_type === 'multiple_answers'">
+                                        <p class="red"><b>Note:</b> <i>This question has more than one answer, select all of the possible answers.</i></p>
+                                    </div>
                                 </td>
                             </tr>
                         </table>
-
-
-
-
                     </div>
                 </div>
                 <div v-if="!($gate.isAdmin())">
@@ -160,6 +164,21 @@
                                 }
                                 else if (question.type === 'multiple_choice'){
                                     question.answers = shuffler(question.answers);
+                                    let answers_count = 0;
+                                    question.answers.forEach(function (item) {
+                                        if (item.isAnswer){
+                                            answers_count++;
+                                        }
+
+                                        if (answers_count > 1){
+                                            question['answer_type'] = 'multiple_answers'
+                                        }
+                                        else{
+                                            question['answer_type'] = 'single_answer'
+                                        }
+                                    });
+
+
                                 }
                             })
                         })

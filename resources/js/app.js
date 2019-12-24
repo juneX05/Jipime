@@ -68,6 +68,10 @@ Vue.filter('myDate',function (date) {
     return moment(date).format('MMMM Do YYYY');
 });
 
+Vue.filter('truncate', function (text, length = 50, suffix = '...') {
+    return text.substring(0, length) + ( text.length > 50 ? suffix: '' );
+});
+
 window.Fire = new Vue();
 
 /**
